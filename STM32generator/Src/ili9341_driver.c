@@ -24,12 +24,19 @@ void ILI9341_Reset() {
 }
 
 void ILI9341_WriteCommand(uint8_t cmd) {
+#ifdef USE_DMA
+	HAL_DMA_PollForTransfer(&SPI_DMA, HAL_DMA_FULL_TRANSFER, 1);
+#endif
 	HAL_GPIO_WritePin(ILI9341_DC_GPIO_Port, ILI9341_DC_Pin, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&ILI9341_SPI_PORT, &cmd, sizeof(cmd), HAL_MAX_DELAY);
 }
 
 void ILI9341_WriteData(uint8_t *buff, size_t buff_size) {
+
 	HAL_GPIO_WritePin(ILI9341_DC_GPIO_Port, ILI9341_DC_Pin, GPIO_PIN_SET);
+#ifdef USE_DMA
+	HAL_DMA_PollForTransfer(&SPI_DMA, HAL_DMA_FULL_TRANSFER, 1);
+#endif
 	while (buff_size > 0) {
 		uint16_t chunk_size = buff_size > 32768 ? 32768 : buff_size;
 		HAL_SPI_Transmit(&ILI9341_SPI_PORT, buff, chunk_size, HAL_MAX_DELAY);
@@ -213,3 +220,48 @@ void ILI9341_WriteString(uint16_t x, uint16_t y, char *str, FontDef font,
 	}
 	ILI9341_Unselect();
 }
+
+#ifdef USE_DMA
+
+void ILI9341_WriteStringDMA(uint16_t x, uint16_t y, char* str, FontDef font, uint16_t color, uint16_t bgcolor, uint8_t lenght) {
+	HAL_DMA_PollForTransfer(&SPI_DMA, HAL_DMA_FULL_TRANSFER, 1);
+	uint16_t dane[26*320] = {0};
+	ILI9341_Select();
+		for(uint8_t i = 0; i < lenght; i++) {
+				for(uint8_t j = 0; j < font.height; j++) {
+					uint16_t wiersz = font.data[(*(str + i) - 32) * font.height + j];
+					for(uint8_t k = 0; k < font.width; k++) {
+						uint16_t kolor = 0;
+						if(wiersz & (1<<((font.width-1)-k))) {
+							kolor = ((color & 0x00FF)<<8)|((color & 0xFF00)>>8);
+						}else {
+							kolor = ((bgcolor & 0x00FF)<<8)|((bgcolor & 0xFF00)>>8);
+						}
+						uint32_t tmp = k + (i * font.width) + (j * (font.width * lenght));
+						dane[tmp] = kolor;
+					}
+				}
+		}
+		ILI9341_DrawImageDMA(x, y, lenght*font.width, font.height, (const uint16_t*)&dane);
+}
+
+void ILI9341_DrawImageDMA(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data) {
+	if ((x >= ILI9341_WIDTH) || (y >= ILI9341_HEIGHT))
+			return;
+		if ((x + w - 1) >= ILI9341_WIDTH)
+			return;
+		if ((y + h - 1) >= ILI9341_HEIGHT)
+			return;
+		ILI9341_Select();
+		ILI9341_SetAddressWindow(x, y, x + w - 1, y + h - 1);
+		ILI9341_WriteDataDMA((uint8_t*) data, w * h * 2);
+}
+
+void ILI9341_WriteDataDMA(uint8_t* buff, uint16_t buff_size) {
+	HAL_DMA_PollForTransfer(&SPI_DMA, HAL_DMA_FULL_TRANSFER, 1);
+	HAL_GPIO_WritePin(ILI9341_DC_GPIO_Port, ILI9341_DC_Pin, GPIO_PIN_SET);
+	HAL_SPI_Transmit_DMA(&ILI9341_SPI_PORT, buff, buff_size);
+
+}
+
+#endif

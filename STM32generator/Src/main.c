@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
@@ -70,6 +71,7 @@ void HAL_SYSTICK_Callback(void) {
 		HAL_GPIO_TogglePin(D1_LED_GPIO_Port, D1_LED_Pin);
 	}
 }
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -109,8 +111,9 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM5_Init();
   MX_I2C1_Init();
-  MX_SPI2_Init();
+  MX_DMA_Init();
   MX_SPI3_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(D1_LED_GPIO_Port, D1_LED_Pin, 1);
 
@@ -125,55 +128,51 @@ int main(void)
   size = 0xFF;
   HAL_I2C_Master_Transmit(&hi2c1, 0b01000000,&size , 1, 10);
 
-  size = sprintf((char*)&tekst, "EX_FLASH_INFO:");
-  ILI9341_WriteString(0, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
+  size = sprintf((char*)&tekst, "OK");
+  ILI9341_WriteString(12 * 8, 0 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_GREEN, ILI9341_BLACK, size);
+
+  size = sprintf((char*)&tekst, "DMA...");
+  ILI9341_WriteString(0, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_YELLOW, ILI9341_BLACK, size);
+  size = sprintf((char*)&tekst, "OK");
+  ILI9341_WriteStringDMA(7 * 8, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_YELLOW, ILI9341_BLACK, size);
+
+  size = sprintf((char*)&tekst, "EXT_SPI_FLASH_INFO:");
+  ILI9341_WriteStringDMA(0, 2 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
 
   size = sprintf((char*)&tekst, "UID: %X%X%X%X%X%X%X%X", w25qxx.UniqID[7], w25qxx.UniqID[6], w25qxx.UniqID[5], w25qxx.UniqID[4], w25qxx.UniqID[3], w25qxx.UniqID[2], w25qxx.UniqID[1], w25qxx.UniqID[0]);
-  ILI9341_WriteString(0, 2 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(0, 3 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
 
-  size = sprintf((char*)&tekst, "PAGE_SIZE: %u", w25qxx.PageSize);
-  ILI9341_WriteString(0, 3 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
-
-  size = sprintf((char*)&tekst, "PAGE_COUNT: %lu",w25qxx.PageCount);
-  ILI9341_WriteString(0, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
-
-  size = sprintf((char*)&tekst, "SECTOR_SIZE: %lu", w25qxx.SectorSize);
-  ILI9341_WriteString(0, 5 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  size = sprintf((char*)&tekst, "SECTOR_SIZE: %luB", w25qxx.SectorSize);
+  ILI9341_WriteStringDMA(0, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
 
   size = sprintf((char*)&tekst, "SECTOR_COUNT: %lu", w25qxx.SectorCount);
-  ILI9341_WriteString(0, 6 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
-
-  size = sprintf((char*)&tekst, "BLOCK_SIZE: %lu", w25qxx.BlockSize);
-  ILI9341_WriteString(0, 7 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
-
-  size = sprintf((char*)&tekst, "BLOCK_COUNT: %lu", w25qxx.BlockCount);
-  ILI9341_WriteString(0, 8 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(0, 5 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
 
   size = sprintf((char*)&tekst, "CAPACITY: %luKB", w25qxx.CapacityInKiloByte);
-  ILI9341_WriteString(0, 9 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(0, 6 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
 
-  HAL_Delay(200);
+  HAL_Delay(2000);
   ILI9341_FillScreen(ILI9341_BLACK);
 
   size = sprintf((char*)&tekst, "GENERATOR");
-  ILI9341_WriteString(0 * 8, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(0 * 8, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
   size = sprintf((char*)&tekst, "OSCYLOSKOP");
-  ILI9341_WriteString(0 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(0 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
   size = sprintf((char*)&tekst, "TEST");
-  ILI9341_WriteString(0 * 8, 9 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(0 * 8, 9 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
   size = sprintf((char*)&tekst, "RESET");
-  ILI9341_WriteString(0 * 8, 12 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(0 * 8, 12 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
 
   size = sprintf((char*)&tekst, "FFT");
-  ILI9341_WriteString(30 * 8, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(30 * 8, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
   size = sprintf((char*)&tekst, "ZEROWANIE");
-  ILI9341_WriteString(24 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(24 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
 
 
   size = sprintf((char*)&tekst, "[BRAK]");
-  ILI9341_WriteString(10 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
-  ILI9341_WriteString(33 * 8, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
-  ILI9341_WriteString(33 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(10 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(33 * 8, 1 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
+  ILI9341_WriteStringDMA(33 * 8, 4 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_RED, ILI9341_BLACK, size);
 
   while(!buttons) {
 	  //HAL_I2C_Master_Receive(&hi2c1, 0b01000000, &buttons, 1, 10);

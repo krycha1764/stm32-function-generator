@@ -13,6 +13,8 @@
 #include <stdbool.h>
 #include "stm32f4xx_hal.h"
 
+#define USE_DMA
+
 #define ILI9341_MADCTL_MY  0x80
 #define ILI9341_MADCTL_MX  0x40
 #define ILI9341_MADCTL_MV  0x20
@@ -23,6 +25,11 @@
 
 #define ILI9341_SPI_PORT hspi2
 extern SPI_HandleTypeDef ILI9341_SPI_PORT;
+
+#ifdef USE_DMA
+#define SPI_DMA hdma_spi2_tx
+extern DMA_HandleTypeDef SPI_DMA;
+#endif
 
 #define ILI9341_RES_Pin       TFT_RST_Pin
 #define ILI9341_RES_GPIO_Port TFT_RST_GPIO_Port
@@ -77,5 +84,11 @@ void ILI9341_Reset();
 void ILI9341_WriteCommand(uint8_t cmd);
 void ILI9341_WriteData(uint8_t* buff, size_t buff_size);
 void ILI9341_SetAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+
+#ifdef USE_DMA
+void ILI9341_WriteDataDMA(uint8_t* buff, uint16_t buff_size);
+void ILI9341_WriteStringDMA(uint16_t x, uint16_t y, char* str, FontDef font, uint16_t color, uint16_t bgcolor, uint8_t lenght);
+void ILI9341_DrawImageDMA(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t* data);
+#endif
 
 #endif // __ILI9341_H__

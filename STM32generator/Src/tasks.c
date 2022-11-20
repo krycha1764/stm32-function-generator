@@ -45,6 +45,6 @@ void WAVEFORM(uint8_t waveform) {
 		size = sprintf((char*)&tekst, "ERROR   ");
 		break;
 	}
-	ILI9341_WriteString(0 * 8, 5 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
+	ILI9341_WriteStringDMA(0 * 8, 5 * 18, (char*)&tekst, Font_DOS8x16, ILI9341_WHITE, ILI9341_BLACK, size);
 	AD9833_SetWave(waveform);
 }
